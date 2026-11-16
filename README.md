@@ -23,10 +23,6 @@ Use **Add watermark** to upload a PNG/JPEG, enter hidden text and a secret key, 
 Use **Detect watermark** to upload that PNG and recover the authenticated text with the same key.
 The app uses the default DSP configuration and processes images in memory. The local command binds to your computer.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fnamanshetty25%2FDSP-Course-Project-Image-Video-Watermarking)
-
-To share the website, sign in to Render, review the free web service in `render.yaml`, and deploy. Open the HTTPS URL Render assigns after the build passes. The free service can take about a minute to wake after 15 minutes of inactivity.
-
 Requires **Python 3.10+**. Video operations also require `ffmpeg` and `ffprobe` on your `PATH`, with the encoder you select (`libx264` by default).
 
 ```bash
