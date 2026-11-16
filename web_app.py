@@ -1,11 +1,13 @@
 """Local image watermark website. Run: python web_app.py"""
 import base64
 import json
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from io import BytesIO
 from pathlib import Path
+from wsgiref.simple_server import make_server
 
 import cv2
 import numpy as np
+from PIL import Image, UnidentifiedImageError
 
 from core import ImageWatermarkConfig, ImageWatermarker, ImageWatermarkExtractor
 from core.metrics import psnr, ssim
@@ -16,6 +18,14 @@ def process(data):
     if not isinstance(key, str) or not key.strip() or len(key) > 1024:
         raise ValueError('Enter a secret key (up to 1024 characters).')
     raw = base64.b64decode(data['image'], validate=True)
+    if len(raw) > 8 * 1024 * 1024:
+        raise ValueError('Upload an image up to 8 MB.')
+    try:
+        with Image.open(BytesIO(raw), formats=('PNG', 'JPEG')) as uploaded:
+            if max(uploaded.size) > 2048 or min(uploaded.size) < 128:
+                raise ValueError('Use an image between 128 and 2048 pixels on each side.')
+    except (UnidentifiedImageError, Image.DecompressionBombError, OSError) as exc:
+        raise ValueError('Upload a valid PNG or JPEG within the size limits.') from exc
     image = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError('Upload a valid PNG or JPEG image.')
@@ -45,42 +55,33 @@ def process(data):
     raise ValueError('Unknown operation.')
 
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        if self.path not in ('/', '/index.html'):
-            self.send_error(404)
-            return
-        content = (Path(__file__).parent / 'web' / 'index.html').read_bytes()
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.end_headers()
-        self.wfile.write(content)
-
-    def do_POST(self):
-        if self.path != '/api/watermark':
-            self.send_error(404)
-            return
-        try:
-            length = int(self.headers.get('Content-Length', '0'))
-            if not 0 < length <= 12 * 1024 * 1024:
-                raise ValueError('Upload size exceeds the 8 MB image limit.')
-            data = json.loads(self.rfile.read(length))
-            if not isinstance(data, dict):
-                raise ValueError('Invalid request.')
-            result = process(data)
-            status = 200
-        except (ValueError, KeyError, TypeError, cv2.error) as exc:
-            result, status = {'error': str(exc)}, 400
-        except Exception:
-            result, status = {'error': 'Processing failed. Try a different image.'}, 500
-        content = json.dumps(result).encode()
-        self.send_response(status)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Cache-Control', 'no-store')
-        self.end_headers()
-        self.wfile.write(content)
+def app(environ, start_response):
+    route = (environ['REQUEST_METHOD'], environ['PATH_INFO'])
+    if route in {('GET', '/'), ('GET', '/index.html')}:
+        start_response('200 OK', [('Content-Type', 'text/html; charset=utf-8')])
+        return [(Path(__file__).parent / 'web' / 'index.html').read_bytes()]
+    if route == ('GET', '/health'):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [b'ok']
+    status = '200 OK'
+    try:
+        if route != ('POST', '/api/watermark'):
+            start_response('404 Not Found', [('Content-Type', 'text/plain')])
+            return [b'Not found']
+        length = int(environ.get('CONTENT_LENGTH') or '0')
+        if not 0 < length <= 12 * 1024 * 1024:
+            raise ValueError('Upload an image up to 8 MB.')
+        data = json.loads(environ['wsgi.input'].read(length))
+        if not isinstance(data, dict) or not isinstance(data.get('image'), str):
+            raise ValueError('Upload an image to continue.')
+        result = process(data)
+    except (ValueError, cv2.error) as exc:
+        result, status = {'error': str(exc)}, '400 Bad Request'
+    start_response(status, [('Content-Type', 'application/json'), ('Cache-Control', 'no-store')])
+    return [json.dumps(result, allow_nan=False).encode()]
 
 
 if __name__ == '__main__':
     print('DSP Watermark Studio: http://127.0.0.1:8000', flush=True)
-    ThreadingHTTPServer(('127.0.0.1', 8000), Handler).serve_forever()
+    with make_server('127.0.0.1', 8000, app) as server:
+        server.serve_forever()

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: dsp-watermark-studio
+    runtime: python
+    plan: free
+    autoDeployTrigger: off
+    buildCommand: pip install -r requirements-web.txt
+    startCommand: gunicorn web_app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 60
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: OPENBLAS_NUM_THREADS
+        value: '1'
