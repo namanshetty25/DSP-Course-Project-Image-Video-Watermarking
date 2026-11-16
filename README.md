@@ -16,6 +16,13 @@ The [course report](report/README.md) includes editable LaTeX, result figures, m
 
 ## Setup
 
+### Interactive image website
+
+After installing the project dependencies, run `python web_app.py` from the repository root and open <http://127.0.0.1:8000>.
+Use **Add watermark** to upload a PNG/JPEG, enter hidden text and a secret key, and download a verified watermarked PNG.
+Use **Detect watermark** to upload that PNG and recover the authenticated text with the same key.
+The app uses the default DSP configuration, processes images in memory, and binds only to your local computer. It is a local demonstration server, not a public hosting setup.
+
 Requires **Python 3.10+**. Video operations also require `ffmpeg` and `ffprobe` on your `PATH`, with the encoder you select (`libx264` by default).
 
 ```bash
