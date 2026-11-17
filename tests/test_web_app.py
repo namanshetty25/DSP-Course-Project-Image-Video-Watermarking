@@ -10,6 +10,7 @@ def test_web_roundtrip_and_wrong_key():
                       'key': 'web-test-key', 'text': 'DSP demo'})
     assert marked['valid']
     recovered = process({'action': 'detect', 'image': marked['image'], 'key': 'web-test-key'})
-    assert recovered == {'valid': True, 'text': 'DSP demo'}
+    assert recovered['valid'] and recovered['text'] == 'DSP demo'
+    assert len(recovered['stages']) == 7
     wrong = process({'action': 'detect', 'image': marked['image'], 'key': 'wrong-key'})
-    assert wrong == {'valid': False, 'text': None}
+    assert not wrong['valid'] and wrong['text'] is None

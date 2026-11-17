@@ -3,13 +3,41 @@
 <title>Watermark Studio · EE313</title>
 <style>
 :root{font-family:Inter,Segoe UI,sans-serif;color:#17332c;background:#f3f5ef}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}header{padding:25px 6%;border-bottom:1px solid #d8dfd6;display:flex;justify-content:space-between;align-items:center}header b{font-size:20px}small,.muted{color:#63766c}main{max-width:1120px;margin:54px auto;padding:0 24px}.eyebrow{font-size:12px;letter-spacing:2px;color:#43795e}h1{font-size:clamp(34px,5vw,58px);letter-spacing:-2px;margin:16px 0}p{line-height:1.6}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:30px 0 22px}button,.download{border:0;border-radius:9px;padding:14px 22px;font:inherit;cursor:pointer;background:#235d44;color:white;text-decoration:none;display:inline-block}button:disabled{opacity:.55;cursor:wait}.tab{background:#e0e7dd;color:#294d3c}.tab[aria-selected=true]{background:#235d44;color:white}.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.card{background:white;border:1px solid #dce3d8;border-radius:18px;padding:28px}h2{font-size:21px;margin-top:0}label{display:block;font-weight:600;margin:19px 0 8px}input,textarea{width:100%;padding:13px;border:1px solid #bdcdbf;border-radius:8px;font:inherit;background:#fbfcfa}input[type=file]{padding:23px;border:2px dashed #b9cbb9}textarea{resize:vertical;min-height:90px}.preview{width:100%;max-height:320px;object-fit:contain;border-radius:10px;background:#edf2e9;margin:16px 0}.placeholder{min-height:250px;display:grid;place-content:center;text-align:center;background:#f4f7f0;border-radius:12px;color:#71816f;padding:22px}#status{white-space:pre-wrap;overflow-wrap:anywhere}.error{color:#a33428}.success{color:#226343}#about li{margin-bottom:8px}.metrics{padding:16px;background:#edf5e9;border-radius:10px;margin:16px 0}button:focus-visible,a:focus-visible{outline:3px solid #d4a634;outline-offset:3px}@media(max-width:700px){.grid{grid-template-columns:1fr}main{margin-top:30px}header small{display:none}}
+
+.lab{margin:24px 0;background:#112b27;color:#e7f5ed;border-radius:20px;padding:28px}
+.lab button{background:#284c43}.lab button[aria-current=true]{background:#bfe7b5;color:#17332c}
+.lab-nav{display:flex;gap:8px;overflow-x:auto;padding:12px 0}
+.lab-nav button{white-space:nowrap;font-size:13px;padding:10px}
+.layer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;perspective:1000px}
+.layer{background:#203e35;padding:15px;border:1px solid #54765e;border-radius:12px;animation:arrive .6s ease both}
+.layer img{width:100%;image-rendering:pixelated;border-radius:5px}
+.layer small{color:#b3ccbb;display:block;margin-top:8px}
+.layer:hover{transform:translateY(-6px)}
+.lab p{max-width:850px;color:#c4d9cc}.lab-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#bit-stream{overflow-wrap:anywhere;letter-spacing:4px;line-height:2;color:#c8ef94}
+@keyframes arrive{from{opacity:0;transform:translateX(30px) rotateY(-18deg)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.layer{animation:none}}
 </style>
 <header><b>◈ Watermark Studio</b><small>IIT Indore · Digital Signal Processing · EE313</small></header>
 <main><span class="eyebrow">YOUR IMAGE. YOUR SIGNATURE.</span><h1>Hide a message.<br>Verify its origin.</h1><p class="muted">Embed an invisible text watermark using DSP, then recover and authenticate it with your secret key.</p>
 <div class="tabs" role="tablist" aria-label="Watermark Studio"><button class="tab" role="tab" aria-selected="true" data-mode="embed">Add watermark</button><button class="tab" role="tab" aria-selected="false" data-mode="detect">Detect watermark</button><button id="about-tab" class="tab" role="tab" aria-selected="false" aria-controls="about" data-mode="about">About the project</button></div>
 <div class="grid" id="workspace"><section class="card"><h2 id="heading">Create your watermarked image</h2><form id="form"><label for="file">Upload an image</label><input id="file" type="file" accept="image/png,image/jpeg" required><small>PNG or JPEG · up to 8 MB · 128–2048 px per side</small><img id="source" class="preview" hidden alt="Uploaded image preview"><div id="textField"><label for="text">Watermark text</label><textarea id="text" placeholder="For example: Created by Naman" required maxlength="2000"></textarea><small>Available text capacity depends on the image dimensions.</small></div><label for="key">Secret key</label><input id="key" type="password" required maxlength="1024" autocomplete="off" placeholder="Keep this key for detection"><p class="muted" id="hint">Download the resulting PNG and retain your key. The text is hidden inside the image.</p><button id="submit" type="submit">Embed watermark →</button></form></section>
 <section class="card"><h2>Your result</h2><div id="empty" class="placeholder">Your result will appear here.<br><small>Upload an image to begin.</small></div><p id="status" role="status" aria-live="polite"></p><img id="result" class="preview" hidden alt="Watermarked image"><div id="metrics" class="metrics" hidden></div><a id="download" class="download" download="watermarked.png" hidden>Download PNG ↓</a></section></div>
-<section id="about" class="card" role="tabpanel" aria-labelledby="about-tab" hidden>
+<section id="lab" class="lab" hidden aria-label="DSP process explorer">
+  <h2>Explore the signal processing</h2>
+  <p id="lab-status" role="status"></p>
+  <div id="stage-nav" class="lab-nav" aria-label="Processing stages"></div>
+  <div class="lab-controls">
+    <button id="previous-stage" type="button">← Previous</button>
+    <button id="play-stages" type="button">Play walkthrough</button>
+    <button id="next-stage" type="button">Next →</button>
+    <span id="stage-count"></span>
+  </div>
+  <h3 id="stage-title"></h3><p id="stage-description"></p>
+  <div id="layer-grid" class="layer-grid"></div>
+  <pre id="bit-stream"></pre><p id="stage-checks"></p>
+</section>
+<section id="about"  class="card" role="tabpanel" aria-labelledby="about-tab" hidden>
   <h2>Digital Watermarking for AI-Generated Media using DSP Techniques</h2>
   <p class="muted">EE313 · Digital Signal Processing · IIT Indore</p>
   <p>This course project embeds hidden text in an image and verifies the recovered message using a secret key. It uses the Haar discrete wavelet transform and block discrete cosine transform to select image coefficients. Spread-transform dither modulation encodes the bits across those coefficients, and error correction helps recover the message after some image changes. The project also explores watermarking across video frames.</p>
@@ -23,17 +51,104 @@
 </section></main>
 <script>
 const $=id=>document.getElementById(id);let mode='embed',busy=false;
-function clearResult(){for(const id of ['result','metrics','download'])$(id).hidden=true;$('download').removeAttribute('href');$('result').removeAttribute('src');$('status').textContent='';$('empty').hidden=false}
+function clearResult(){stopPlayback();for(const id of ['result','metrics','download'])$(id).hidden=true;$('download').removeAttribute('href');$('result').removeAttribute('src');$('status').textContent='';$('empty').hidden=false}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{if (busy) return;
 const isAbout = b.dataset.mode === 'about';
 document.querySelectorAll('.tab').forEach(tab => tab.setAttribute('aria-selected', tab === b));
 $('workspace').hidden = isAbout;
 $('about').hidden = !isAbout;
+$('lab').hidden = isAbout || !stages.length;
+stopPlayback();
 if (isAbout || mode === b.dataset.mode) return;
 mode = b.dataset.mode;
 $('textField').hidden=mode==='detect';$('text').required=mode==='embed';$('heading').textContent=mode==='embed'?'Create your watermarked image':'Recover a hidden watermark';$('submit').textContent=mode==='embed'?'Embed watermark →':'Detect watermark →';$('hint').textContent=mode==='embed'?'Download the resulting PNG and retain your key. The text is hidden inside the image.':'Use the same secret key used for embedding. Wrong keys or damaged images may prevent recovery.';clearResult()});
-let previewUrl; $('file').onchange=()=>{clearResult();if(previewUrl)URL.revokeObjectURL(previewUrl);const f=$('file').files[0];$('source').hidden=!f;if(f){previewUrl=URL.createObjectURL(f);$('source').src=previewUrl}};
+let previewUrl; $('file').onchange=()=>{clearResult();if(previewUrl)URL.revokeObjectURL(previewUrl);const f=$('file').files[0];$('source').hidden=!f;if(f){previewUrl=URL.createObjectURL(f);$('source').src=previewUrl} analyzeUpload(f)};
 function read(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.onerror=reject;r.readAsDataURL(file)})}
-$('form').onsubmit=async e=>{e.preventDefault();if(busy)return;clearResult();busy=true;$('submit').disabled=true;document.querySelectorAll('.tab').forEach(b=>b.disabled=true);$('status').className='';$('status').textContent='Processing image…';try{const f=$('file').files[0];if(!f||f.size>8*1024*1024)throw Error('Choose an image smaller than 8 MB.');const response=await fetch('/api/watermark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:mode,image:await read(f),key:$('key').value,text:$('text').value})});const data=await response.json();if(!response.ok)throw Error(data.error);$('empty').hidden=true;if(mode==='embed'){const url='data:image/png;base64,'+data.image;$('result').src=url;$('result').hidden=false;$('download').href=url;$('download').hidden=false;$('metrics').textContent=`PSNR ${data.psnr} dB · SSIM ${data.ssim} · Capacity ${data.capacity} bytes`;$('metrics').hidden=false;$('status').textContent='Watermark embedded and verified.';$('status').className='success'}else{$('status').textContent=data.valid?'Verified watermark:\n'+data.text:'No authenticated watermark recovered. Check the key and image. This result does not prove that no watermark exists.';$('status').className=data.valid?'success':'error'}}catch(err){$('status').textContent=err.message;$('status').className='error'}finally{busy=false;$('submit').disabled=false;document.querySelectorAll('.tab').forEach(b=>b.disabled=false)}};
+$('form').onsubmit=async e=>{e.preventDefault();if(busy)return;clearResult();busy=true;$('submit').disabled=true;document.querySelectorAll('.tab').forEach(b=>b.disabled=true);$('status').className='';$('status').textContent='Processing image…';try{const f=$('file').files[0];if(!f||f.size>8*1024*1024)throw Error('Choose an image smaller than 8 MB.');const response=await fetch('/api/watermark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:mode,image:await read(f),key:$('key').value,text:$('text').value})});const data=await response.json();if(!response.ok)throw Error(data.error);setStages(data.stages);$('empty').hidden=true;if(mode==='embed'){const url='data:image/png;base64,'+data.image;$('result').src=url;$('result').hidden=false;$('download').href=url;$('download').hidden=false;$('metrics').textContent=`PSNR ${data.psnr} dB · SSIM ${data.ssim} · Capacity ${data.capacity} bytes`;$('metrics').hidden=false;$('status').textContent='Watermark embedded and verified.';$('status').className='success'}else{$('status').textContent=data.valid?'Verified watermark:\n'+data.text:'No authenticated watermark recovered. Check the key and image. This result does not prove that no watermark exists.';$('status').className=data.valid?'success':'error'}}catch(err){$('status').textContent=err.message;$('status').className='error'}finally{busy=false;$('submit').disabled=false;document.querySelectorAll('.tab').forEach(b=>b.disabled=false)}};
+
+let stages = [];
+let stageIndex = 0;
+let playback = null;
+let analysisId = 0;
+function stopPlayback() {
+  clearInterval(playback);
+  playback = null;
+  $('play-stages').textContent = 'Play walkthrough';
+}
+function renderStage() {
+  const stage = stages[stageIndex];
+  if (!stage) return;
+  $('stage-title').textContent = stage.title;
+  $('stage-description').textContent = stage.description;
+  $('stage-count').textContent = (stageIndex + 1) + ' / ' + stages.length;
+  $('previous-stage').disabled = stageIndex === 0;
+  $('next-stage').disabled = stageIndex === stages.length - 1;
+  $('layer-grid').replaceChildren();
+  for (const panel of stage.panels) {
+    const card = document.createElement('div');
+    card.className = 'layer';
+    const image = document.createElement('img');
+    image.src = 'data:image/png;base64,' + panel.image;
+    image.alt = panel.name;
+    const title = document.createElement('strong');
+    title.textContent = panel.name;
+    const detail = document.createElement('small');
+    detail.textContent = panel.shape.slice(0,2).join(' × ') + ' · range ' + panel.minimum + ' to ' + panel.maximum;
+    card.append(title, image, detail);
+    $('layer-grid').append(card);
+  }
+  $('bit-stream').textContent = stage.bits || '';
+  $('stage-checks').textContent = Object.entries(stage.checks || {}).map(([name, valid]) => name + ' ' + (valid ? '✓ Passed' : '✗ Failed')).join(' · ');
+  [...$('stage-nav').children].forEach((button,index) => button.setAttribute('aria-current', index === stageIndex));
+}
+function setStages(value) {
+  stopPlayback();
+  stages = value || [];
+  stageIndex = 0;
+  $('lab').hidden = !stages.length || !$('about').hidden;
+  $('stage-nav').replaceChildren();
+  stages.forEach((stage,index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = stage.title;
+    button.onclick = () => { stopPlayback(); stageIndex = index; renderStage(); };
+    $('stage-nav').append(button);
+  });
+  $('lab-status').textContent = 'Transform images are computed from your upload. Playback explains the completed computation. Each preview is normalized for visibility.';
+  renderStage();
+}
+$('previous-stage').onclick = () => { stopPlayback(); stageIndex--; renderStage(); };
+$('next-stage').onclick = () => { stopPlayback(); stageIndex++; renderStage(); };
+$('play-stages').onclick = () => {
+  if (playback) { stopPlayback(); return; }
+  if (stageIndex === stages.length - 1) stageIndex = 0;
+  renderStage();
+  $('play-stages').textContent = 'Pause';
+  playback = setInterval(() => {
+    if (stageIndex >= stages.length - 1) { stopPlayback(); return; }
+    stageIndex++;
+    renderStage();
+  }, 2500);
+};
+async function analyzeUpload(file) {
+  const requestId = ++analysisId;
+  setStages([]);
+  if (!file) return;
+  $('lab').hidden = false;
+  $('lab-status').textContent = 'Computing brightness and transform layers…';
+  try {
+    if (file.size > 8 * 1024 * 1024) throw Error('Choose an image smaller than 8 MB.');
+    const response = await fetch('/api/watermark', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action:'analyze',image:await read(file)})
+    });
+    const data = await response.json();
+    if (requestId !== analysisId || busy) return;
+    if (!response.ok) throw Error(data.error);
+    setStages(data.stages);
+  } catch (error) {
+    if (requestId === analysisId) $('lab-status').textContent = error.message;
+  }
+}
 </script></html>
 
