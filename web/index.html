@@ -112,7 +112,11 @@ $('lab').hidden = isAbout;
 stopPlayback();
 if (isAbout || mode === b.dataset.mode) return;
 mode = b.dataset.mode;
-$('textField').hidden=mode==='detect';$('text').required=mode==='embed';$('heading').textContent=mode==='embed'?'Create your watermarked image':'Recover a hidden watermark';$('submit').textContent=mode==='embed'?'Embed watermark →':'Detect watermark →';$('hint').textContent=mode==='embed'?'Download the resulting PNG and retain your key. The text is hidden inside the image.':'Use the same secret key used for embedding. Wrong keys or damaged images may prevent recovery.';clearResult()});
+$('textField').hidden=mode==='detect';$('text').required=mode==='embed';$('heading').textContent=mode==='embed'?'Create your watermarked image':'Recover a hidden watermark';$('submit').textContent=mode==='embed'?'Embed watermark →':'Detect watermark →';$('hint').textContent=mode==='embed'?'Download the resulting PNG and retain your key. The text is hidden inside the image.':'Use the same secret key used for embedding. Wrong keys or damaged images may prevent recovery.';
+clearResult();
+// Only the shared transform stages apply before this mode runs.
+if (stages.length > 5) setStages(stages.slice(0, 5));
+});
 let previewUrl; $('file').onchange=()=>{clearResult();if(previewUrl)URL.revokeObjectURL(previewUrl);const f=$('file').files[0];$('source').hidden=!f;if(f){previewUrl=URL.createObjectURL(f);$('source').src=previewUrl} analyzeUpload(f)};
 function read(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result.split(',')[1]);r.onerror=reject;r.readAsDataURL(file)})}
 $('form').onsubmit=async e=>{e.preventDefault();if(busy)return;clearResult();busy=true;$('submit').disabled=true;document.querySelectorAll('.tab').forEach(b=>b.disabled=true);$('status').className='';$('status').textContent='Processing image…';try{const f=$('file').files[0];if(!f||f.size>8*1024*1024)throw Error('Choose an image smaller than 8 MB.');const response=await fetch('/api/watermark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:mode,image:await read(f),key:$('key').value,text:$('text').value})});const data=await response.json();if(!response.ok)throw Error(data.error);setStages(data.stages);$('empty').hidden=true;if(mode==='embed'){const url='data:image/png;base64,'+data.image;$('result').src=url;$('result').hidden=false;$('download').href=url;$('download').hidden=false;$('metrics').textContent=`PSNR ${data.psnr} dB · SSIM ${data.ssim} · Capacity ${data.capacity} bytes`;$('metrics').hidden=false;$('status').textContent='Watermark embedded and verified.';$('status').className='success'}else{$('status').textContent=data.valid?'Verified watermark:\n'+data.text:'No authenticated watermark recovered. Check the key and image. This result does not prove that no watermark exists.';$('status').className=data.valid?'success':'error'}}catch(err){$('status').textContent=err.message;$('status').className='error'}finally{busy=false;$('submit').disabled=false;document.querySelectorAll('.tab').forEach(b=>b.disabled=false)}};
@@ -157,7 +161,15 @@ function renderStage() {
   }
   $('bit-stream').textContent = stage.bits || '';
   $('stage-checks').textContent = Object.entries(stage.checks || {}).map(([name, valid]) => name + ' ' + (valid ? '✓ Passed' : '✗ Failed')).join(' · ');
-  [...$('stage-nav').children].forEach((button,index) => button.setAttribute('aria-current', index === stageIndex));
+  const navigation = $('stage-nav');
+  [...navigation.children].forEach((button, index) => button.setAttribute('aria-current', index === stageIndex));
+  const active = navigation.children[stageIndex];
+  if (active) {
+    const strip = navigation.getBoundingClientRect();
+    const tab = active.getBoundingClientRect();
+    if (tab.right > strip.right) navigation.scrollLeft += tab.right - strip.right;
+    if (tab.left < strip.left) navigation.scrollLeft -= strip.left - tab.left;
+  }
 }
 function setStages(value) {
   stopPlayback();
